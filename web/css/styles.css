@@ -1,0 +1,36 @@
+.formbody {
+	margin-top: 2%;
+}
+
+.formhead {
+	margin-right: 1%;
+}
+
+.maintitle{
+	padding-right: 15%;
+}
+
+.secondtitle{
+	margin-right: 140px;
+}
+
+
+.btn-label {
+position: relative;
+left: -12px;
+display: inline-block;
+padding: 6px 12px;
+background: rgba(0,0,0,0.15);
+border-radius: 2px 0 0 2px;}
+
+.btn-labeled {
+padding-top: 0;
+padding-bottom: 0;}
+
+.input-group { 
+margin-bottom:10px; }
+
+.logout {
+	padding-left: 50%;
+}
+

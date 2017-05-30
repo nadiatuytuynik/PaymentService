@@ -19,7 +19,8 @@ public class BasketDaoImpl extends AbstractDaoImpl<Basket> implements BasketDao{
             ps.setString(2, entity.getRecipient_card_number());
             ps.setDouble(3, entity.getAmount__of_remittance());
             ps.setString(4, entity.getCurrency_of_amount());
-            ps.setString(5, entity.getStatus_of_line());
+            ps.setString(5, entity.getData_of_operation());
+            ps.setString(6, entity.getStatus_of_line());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -32,8 +33,9 @@ public class BasketDaoImpl extends AbstractDaoImpl<Basket> implements BasketDao{
             ps.setString(2, entity.getRecipient_card_number());
             ps.setDouble(3, entity.getAmount__of_remittance());
             ps.setString(4, entity.getCurrency_of_amount());
-            ps.setString(5, entity.getStatus_of_line());
-            ps.setLong(6, entity.getBasket_line_id());
+            ps.setString(5, entity.getData_of_operation());
+            ps.setString(6, entity.getStatus_of_line());
+            ps.setLong(7, entity.getBasket_line_id());
         } catch (SQLException e) {
             e.printStackTrace();
         }

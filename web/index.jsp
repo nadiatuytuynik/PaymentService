@@ -5,6 +5,7 @@
 <%@ page import="java.sql.ResultSet" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html>
@@ -30,7 +31,6 @@
               background-size: 100%; /* Современные браузеры */
 		  }
 	  </style>
-
 	<nav class="navbar navbar-inverse navbar-static-top" role="navigation">
       	<div class ="container-fluid">
 			<div class = "navbar-header maintitle">
@@ -55,7 +55,10 @@
 					<li class="secondtitle">
                         <a  id = "pointer3" href="javascript:onoff('Basket');" style = "pointer-events: none;">Basket</a>
 					</li>
-				<ul>
+					<li class="secondtitle">
+						<a  id = "pointer4" href="javascript:onoff('History');" style = "pointer-events: none;">History</a>
+					</li>
+				</ul>
 			
 			</div>
 	  </div>
@@ -84,7 +87,20 @@
 </script>
 
 
-      <%Object authorize = request.getAttribute("authorize");%>
+
+
+      <%Object authorize = request.getAttribute("authorize");
+		  Object block = request.getAttribute("userblock");
+	  if(block !=null){
+      System.out.println("Blocked!");
+      %>
+		  <script>
+			  alert("Sorry, but your account was blocked!");
+		  </script>
+	 <% }
+
+	  %>
+
       <%if(authorize == null){%>
 
 	  <form class = "formhead" name = "authorization" action = "/AuthorizationServlet" method="post">
@@ -133,12 +149,14 @@
 
       </form>
 
+
             <%}else{%>
 
       <script>
             setPointer('pointer1');
             setPointer('pointer2');
             setPointer('pointer3');
+			setPointer('pointer4');
       </script>
 
       <form name = "LogOutServlet" action = "/LogOutServlet" method="post">
@@ -158,6 +176,7 @@
             <%}%>
 
 </head>
+
 
 <body class="big-page" ondragstart="return false;">
 
@@ -260,17 +279,25 @@
 </div>
     <%
           Object value1 = request.getAttribute("value");
+
           if(value1 != null){ %>
+
       <script>
-          alert("Successfully!");
           onoff('Profile');
       </script>
+
+          <% Object admin = request.getAttribute("admin");
+
+      if(admin != null){%>
+      <script>
+          alert("Hello, Admin!");
+      </script>
+          <%}%>
           <%}
 
          Object val1 = request.getAttribute("val");
         if(val1 !=null){%>
             <script>
-                alert("Successfully!");
             </script>
         <%
         Object row1 = request.getAttribute("number(0)");
@@ -387,6 +414,7 @@
             if(value2 != null){
 		  %>
                 <script>
+                    alert("Step 2");
                     onoff('Profile');
                     onoff('Step2');
                 </script>
@@ -469,7 +497,7 @@
 
 					<div class = "input-group">
 							<span class="input-group-addon"><span class="glyphicon glyphicon-phone"></span></span>
-							<input id = "text_1" type="number" class="form-control text"  placeholder="Phone number" name = "Phone_number"  title = "" required="" value="" maxlength = "30"/>
+							<input id = "text_1" type="text" class="form-control text"  placeholder="Phone number" name = "Phone_number" pattern="\([0-9]{3}\)\s[0-9]{3}-[0-9]{2}-[0-9]{2}" required="" value="" maxlength = "30" title = "Please write (XXX) XXX-XX-XX"/>
 							<span class="glyphicon form-control-feedback"></span>
 					</div>
 					
@@ -591,25 +619,24 @@
                      <th>Card sender</th>
                      <th>Card recipient</th>
                      <th>Amount</th>
-                    <th>Currency</th>
-                     <th>Remove</th>
+                      <th>Currency</th>
                      </tr>
                     </thead>
 						<tbody>
+                        <%if(request.getAttribute("cardsender") != null){
+                        %>
 							<tr>
 								<td>1</td>
 								<td><%= request.getAttribute("cardsender")%></td>
 								<td><%= request.getAttribute("cardrecipient")%></td>
 								<td><%= request.getAttribute("amount")%></td>
 								<td><%= request.getAttribute("currency")%></td>
-								<td>
-									<label><input type="checkbox" value=""></label>
-								</td>
 							</tr>
+                        <%}%>
 						</tbody>
 
 					</table>
-
+                    <p style = "text-align: center;"> No data found.</p>
                 </div>
 
 					<div class = "panel-body">
@@ -629,7 +656,173 @@
     
 </div>
 
-	  <%Object basket = request.getAttribute("Basket");
+      <div class = "col-xs-6 col-md-8"></div>
+      <div id = "History" class = "col-xs-6 col-md-8" style = "display: none;">
+
+          <form  name = "ClearHistoryServlet" action = "/ClearHistoryServlet" method="post">
+              <div class ="panel panel-default">
+                  <div class="panel-heading">
+                      <h3 class="panel-title">History</h3>
+                  </div>
+                  <div class = "panel-body">
+                      <form class = "row">
+
+                          <div class ="panel-group">
+                              <div class = "panel-body">
+
+
+                                  <table class="table table-bordered" >
+                                      <thead>
+                                      <tr>
+                                          <th>№</th>
+                                          <th>Card sender</th>
+                                          <th>Card recipient</th>
+                                          <th>Amount</th>
+                                          <th>Currency</th>
+										  <th>Data</th>
+                                      </tr>
+                                      </thead>
+                                      <tbody>
+                                      <%
+                                          ArrayList<Object> CardsSenderBasketList = new ArrayList<>();ArrayList<Object> RecipientsBasketList = new ArrayList<>();
+                                          ArrayList<Object> AmountsBasketList = new ArrayList<>();ArrayList<Object> CurrenciesBasketList = new ArrayList<>();
+										  ArrayList<Object> DataBasketList = new ArrayList<>();
+
+                                          Object bsender0 = request.getAttribute("bsender(0)");Object bsender1 = request.getAttribute("bsender(1)");Object bsender2 = request.getAttribute("bsender(2)");Object bsender3 = request.getAttribute("bsender(3)");
+                                          Object bsender4 = request.getAttribute("bsender(4)");Object bsender5 = request.getAttribute("bsender(5)");Object bsender6 = request.getAttribute("bsender(6)");Object bsender7 = request.getAttribute("bsender(7)");
+                                          Object bsender8 = request.getAttribute("bsender(8)");Object bsender9 = request.getAttribute("bsender(9)");
+
+                                          CardsSenderBasketList.add(bsender0);CardsSenderBasketList.add(bsender1);CardsSenderBasketList.add(bsender2);CardsSenderBasketList.add(bsender3);
+                                          CardsSenderBasketList.add(bsender4);CardsSenderBasketList.add(bsender5);CardsSenderBasketList.add(bsender6);CardsSenderBasketList.add(bsender7);
+                                          CardsSenderBasketList.add(bsender8);CardsSenderBasketList.add(bsender9);
+
+
+                                          Object brecipient0 = request.getAttribute("brecipient(0)");Object brecipient1 = request.getAttribute("brecipient(1)");Object brecipient2 = request.getAttribute("brecipient(2)");Object brecipient3 = request.getAttribute("brecipient(3)");
+                                          Object brecipient4 = request.getAttribute("brecipient(4)");Object brecipient5 = request.getAttribute("brecipient(5)");Object brecipient6 = request.getAttribute("brecipient(6)");Object brecipient7 = request.getAttribute("brecipient(7)");
+                                          Object brecipient8 = request.getAttribute("brecipient(8)");Object brecipient9 = request.getAttribute("brecipient(9)");
+
+                                          RecipientsBasketList.add(brecipient0);RecipientsBasketList.add(brecipient1);RecipientsBasketList.add(brecipient2);RecipientsBasketList.add(brecipient3);
+                                          RecipientsBasketList.add(brecipient4);RecipientsBasketList.add(brecipient5);RecipientsBasketList.add(brecipient6);RecipientsBasketList.add(brecipient7);
+                                          RecipientsBasketList.add(brecipient8);RecipientsBasketList.add(brecipient9);
+
+
+                                          Object bamount0 = request.getAttribute("bamount(0)");Object bamount1 = request.getAttribute("bamount(1)");Object bamount2 = request.getAttribute("bamount(2)");Object bamount3 = request.getAttribute("bamount(3)");
+                                          Object bamount4 = request.getAttribute("bamount(4)");Object bamount5 = request.getAttribute("bamount(5)");Object bamount6 = request.getAttribute("bamount(6)");Object bamount7 = request.getAttribute("bamount(7)");
+                                          Object bamount8 = request.getAttribute("bamount(8)");Object bamount9 = request.getAttribute("bamount(9)");
+
+                                          AmountsBasketList.add(bamount0);AmountsBasketList.add(bamount1);AmountsBasketList.add(bamount2);AmountsBasketList.add(bamount3);
+                                          AmountsBasketList.add(bamount4);AmountsBasketList.add(bamount5);AmountsBasketList.add(bamount6);AmountsBasketList.add(bamount7);
+                                          AmountsBasketList.add(bamount8);AmountsBasketList.add(bamount9);
+
+                                          Object bcurrency0 = request.getAttribute("bcurrency(0)");Object bcurrency1 = request.getAttribute("bcurrency(1)");Object bcurrency2 = request.getAttribute("bcurrency(2)");Object bcurrency3 = request.getAttribute("bcurrency(3)");
+                                          Object bcurrency4 = request.getAttribute("bcurrency(4)");Object bcurrency5 = request.getAttribute("bcurrency(5)");Object bcurrency6 = request.getAttribute("bcurrency(6)");Object bcurrency7 = request.getAttribute("bcurrency(7)");
+                                          Object bcurrency8 = request.getAttribute("bcurrency(8)");Object bcurrency9 = request.getAttribute("bcurrency(9)");
+
+                                          CurrenciesBasketList.add(bcurrency0);CurrenciesBasketList.add(bcurrency1);CurrenciesBasketList.add(bcurrency2);CurrenciesBasketList.add(bcurrency3);
+                                          CurrenciesBasketList.add(bcurrency4);CurrenciesBasketList.add(bcurrency5);CurrenciesBasketList.add(bcurrency6);CurrenciesBasketList.add(bcurrency7);
+                                          CurrenciesBasketList.add(bcurrency8);CurrenciesBasketList.add(bcurrency9);
+
+										  Object data0 = request.getAttribute("data(0)");Object data1 = request.getAttribute("data(1)");Object data2 = request.getAttribute("data(2)");Object data3 = request.getAttribute("data(3)");
+										  Object data4 = request.getAttribute("data(4)");Object data5 = request.getAttribute("data(5)");Object data6 = request.getAttribute("data(6)");Object data7 = request.getAttribute("data(7)");
+										  Object data8 = request.getAttribute("data(8)");Object data9 = request.getAttribute("data(9)");
+
+
+										  DataBasketList.add(data0);DataBasketList.add(data1);DataBasketList.add(data2);DataBasketList.add(data3);
+										  DataBasketList.add(data4);DataBasketList.add(data5);DataBasketList.add(data6);DataBasketList.add(data7);
+										  DataBasketList.add(data8);DataBasketList.add(data9);
+
+                                          int k = 0;
+                                          for(int i = 0; i<CurrenciesBasketList.size(); i++){
+                                              if(CurrenciesBasketList.get(i) != null){
+                                                  k++;
+                                              }
+                                              if(CurrenciesBasketList.get(i) == null){
+                                                  i++;%>
+                                      <%}else{
+                                      %>
+                                      <tr>
+                                          <td><%=k%></td>
+                                          <td><%= CardsSenderBasketList.get(i)%></td>
+                                          <td><%= RecipientsBasketList.get(i)%></td>
+                                          <td><%= AmountsBasketList.get(i)%></td>
+                                          <td><%= CurrenciesBasketList.get(i)%></td>
+										  <td><%= DataBasketList.get(i)%></td>
+                                      </tr>
+
+
+                                      <%}}%>
+
+                                      <%
+                                          if(request.getAttribute("cardsender") != null){
+                                      %>
+                                      <tr>
+                                          <td>1</td>
+                                          <td><%= request.getAttribute("cardsender")%></td>
+                                          <td><%= request.getAttribute("cardrecipient")%></td>
+                                          <td><%= request.getAttribute("amount")%></td>
+                                          <td><%= request.getAttribute("currency")%></td>
+                                          <td>
+                                              <label><input type="checkbox" value="0"></label>
+                                          </td>
+                                          <td>
+                                              <label><input type="checkbox" value="1"></label>
+                                          </td>
+                                      </tr>
+                                      <%}%>
+                                      </tbody>
+
+                                  </table>
+                                  <p style = "text-align: center;"> No data found.</p>
+                              </div>
+
+                              <div class = "panel-body">
+                                  <a href = "#">
+                                      <button type="submit" class="btn btn-labeled btn-primary">
+                                          <span class="btn-label"><i class="glyphicon glyphicon-remove"></i></span>Clear all
+                                      </button>
+                                  </a>
+                              </div>
+
+
+                          </div>
+                      </form>
+                      <div class = "col-xs-6 col-md-4"></div>
+                  </div>
+              </div>
+
+      </div>
+
+	  <%Object not_enough_money2 = request.getAttribute("not_enough_money2");
+
+	  	if(not_enough_money2 !=null){%>
+	  	<script>
+			alert("Not enough money on the account!");
+            onoff('Profile');
+		</script>
+          <%
+        Object row5 = request.getAttribute("number(0)");
+                                 if(row5 !=null){%>
+      <script>onoff('NewCard');onoff('Row1');</script>
+          <%}%>
+
+          <%       Object row6 = request.getAttribute("number(1)");
+                            if(row6 !=null){%>
+      <script>onoff('Row2');</script>
+          <%}%>
+
+          <%       Object row7 = request.getAttribute("number(2)");
+                            if(row7 !=null){%>
+      <script>onoff('Row3');</script>
+          <%}%>
+
+          <%       Object row8 = request.getAttribute("number(3)");
+                            if(row8 !=null){%>
+      <script>onoff('Row4');</script>
+          <%}%>
+
+	  	<%}else{
+
+	  Object basket = request.getAttribute("Basket");
 	  if(basket !=null){
 	  %>
 	  	<script>
@@ -637,6 +830,7 @@
 		</script>
 
 	  <%}
+	  }
 	  Object update = request.getAttribute("update");
 	  if(update !=null){%>
 	  <script>
@@ -666,12 +860,54 @@
       <%}%>
 
 
-	  <%Object mobilerefill = request.getAttribute("mobilerefill");
-	  if(mobilerefill != null){%>
+		  <%Object not_enough_money = request.getAttribute("not_enough_money");
+		  if(not_enough_money !=null){%>
+
+		  <script>
+			  alert("Not enough money on the account!");
+              onoff('Profile');
+		  </script>
+
+          <%
+        Object row5 = request.getAttribute("number(0)");
+                                 if(row5 !=null){%>
+      <script>onoff('NewCard');onoff('Row1');</script>
+          <%}%>
+
+          <%       Object row6 = request.getAttribute("number(1)");
+                            if(row6 !=null){%>
+      <script>onoff('Row2');</script>
+          <%}%>
+
+          <%       Object row7 = request.getAttribute("number(2)");
+                            if(row7 !=null){%>
+      <script>onoff('Row3');</script>
+          <%}%>
+
+          <%       Object row8 = request.getAttribute("number(3)");
+                            if(row8 !=null){%>
+      <script>onoff('Row4');</script>
+          <%}%>
+
+		  <%}else{
+		  Object mobilerefill = request.getAttribute("mobilerefill");
+	  if(mobilerefill != null){
+	  %>
 	  	<script>
 			onoff('Basket');
 		</script>
-	 <%}%>
+	 <%}
+	 }%>
+
+
+	  <%Object cleared = request.getAttribute("cleared");
+	  	if(cleared !=null){%>
+		  <script>
+              onoff('History');
+			  alert("History was cleared!");
+		  </script>
+	  	<%}
+	  %>
 
 
  <div class = "col-xs-6 col-md-8"></div>
@@ -724,6 +960,23 @@
 											<span class="glyphicon form-control-feedback"></span>
 										</div>
 									</div>
+
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <span class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></span>
+                                            <input type="text" class="form-control" placeholder="Phone number" name="Phone_number" pattern="\([0-9]{3}\)\s[0-9]{3}-[0-9]{2}-[0-9]{2}" required="" value="" maxlength = "30" title = "Please write (XXX) XXX-XX-XX"/>
+                                            <span class="glyphicon form-control-feedback"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <span class="input-group-addon"><span class="glyphicon glyphicon-hand-right"></span>
+                                            <select class="form-control" name = "Status">
+                                                <option value="user">user</option>
+                                                <option value="admin">admin</option>
+                                            </select>
+                                        </span>
+                                    </div>
 			
 									<div class="form-group b2">
 				    					<a href="javascript:onoff('MyForm4');">

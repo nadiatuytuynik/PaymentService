@@ -16,11 +16,10 @@ public class RemittanceDaoImpl extends AbstractDaoImpl<Remittance> implements Re
     @Override
     protected void fillCreateStatement(PreparedStatement ps, Remittance entity) {
         try {
-            ps.setLong(1, entity.getRemittance_id());
-            ps.setLong(2, entity.getSender_card_number());
-            ps.setLong(3, entity.getRecipient_card_number());
-            ps.setInt(4, entity.getAmount__of_remittance());
-            ps.setString(5, entity.getCurrency_of_amount());
+            ps.setLong(1, entity.getSender_card_number());
+            ps.setLong(2, entity.getRecipient_card_number());
+            ps.setInt(3, entity.getAmount__of_remittance());
+            ps.setString(4, entity.getCurrency_of_amount());
         } catch (SQLException e) {
             e.printStackTrace();
         }

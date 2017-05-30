@@ -154,12 +154,90 @@ public class CheckingPasswordServlet extends HttpServlet {
                         req.setAttribute("account(1)", cards_accounts2.get(1));
                         req.setAttribute("account(2)", cards_accounts2.get(2));
                         req.setAttribute("account(3)", cards_accounts2.get(3));
+
+                        req.setAttribute("currency(0)", cards_currencies2.get(0));
+                        req.setAttribute("currency(1)", cards_currencies2.get(1));
+                        req.setAttribute("currency(2)", cards_currencies2.get(2));
+                        req.setAttribute("currency(3)", cards_currencies2.get(3));
                         System.out.println(list_of_cards_id2);
                     }else{
                         System.out.println("Amount of cards is 0!");
                     }
                 }else{
                     System.out.println("He didn't has cards. But now he has!");
+
+                    CallableStatement maxMinIdCards = connection.prepareCall("{call MaxMinIdCards(?,?,?)}");
+                    maxMinIdCards.setInt(1, castid);
+                    maxMinIdCards.registerOutParameter(2, Types.INTEGER);
+                    maxMinIdCards.registerOutParameter(3, Types.INTEGER);
+                    maxMinIdCards.executeQuery();
+
+                    int maxcardid = (int) maxMinIdCards.getObject(2);
+                    int mincardid = (int) maxMinIdCards.getObject(3);
+
+                    maxMinIdCards.close();
+
+                    ArrayList<Integer> list_of_cards_id2 = new ArrayList<Integer>();
+                    for (int ccid = mincardid; ccid <= maxcardid; ccid++) {
+                        CallableStatement showCards = connection.prepareCall("{call ShowCards(?,?,?)}");
+                        showCards.setInt(1, ccid);
+                        showCards.setInt(2, castid);
+                        showCards.registerOutParameter(3, Types.INTEGER);
+                        showCards.executeQuery();
+                        int showcards = (int) showCards.getObject(3);
+                        list_of_cards_id2.add(showcards);
+                        showCards.close();
+                    }
+
+                    ArrayList<String> cards_numbers2 = new ArrayList<String>();
+                    ArrayList<Double> cards_accounts2 = new ArrayList<Double>();
+                    ArrayList<String> cards_currencies2 = new ArrayList<String>();
+
+                    System.out.println(cards_numbers2);
+                    System.out.println(cards_accounts2);
+                    System.out.println(cards_currencies2);
+
+                    for (int i = 0; i < 4; i++) {
+                        cards_numbers2.add(null);
+                        cards_currencies2.add(null);
+                    }
+                    for (int i = 0; i < 4; i++) {
+                        cards_accounts2.add(0.0);
+                    }
+
+
+                    int i = 0;
+                    while (i < list_of_cards_id2.size()) {
+                        CallableStatement cardInfo = connection.prepareCall("{call CardInfo(?,?,?,?)}");
+                        cardInfo.setInt(1, list_of_cards_id2.get(i));
+                        cardInfo.registerOutParameter(2, Types.VARCHAR);
+                        cardInfo.registerOutParameter(3, Types.DOUBLE);
+                        cardInfo.registerOutParameter(4, Types.VARCHAR);
+                        cardInfo.executeQuery();
+                        String cardnumber2 = (String) cardInfo.getObject(2);
+                        cards_numbers2.set(i, cardnumber2);
+                        double cardaccount2 = (double) cardInfo.getObject(3);
+                        cards_accounts2.set(i, cardaccount2);
+                        String cardcurrency2 = (String) cardInfo.getObject(4);
+                        cards_currencies2.set(i, cardcurrency2);
+                        i++;
+                    }
+
+                    req.setAttribute("number(0)", cards_numbers2.get(0));
+                    req.setAttribute("number(1)", cards_numbers2.get(1));
+                    req.setAttribute("number(2)", cards_numbers2.get(2));
+                    req.setAttribute("number(3)", cards_numbers2.get(3));
+
+                    req.setAttribute("account(0)", cards_accounts2.get(0));
+                    req.setAttribute("account(1)", cards_accounts2.get(1));
+                    req.setAttribute("account(2)", cards_accounts2.get(2));
+                    req.setAttribute("account(3)", cards_accounts2.get(3));
+
+                    req.setAttribute("currency(0)", cards_currencies2.get(0));
+                    req.setAttribute("currency(1)", cards_currencies2.get(1));
+                    req.setAttribute("currency(2)", cards_currencies2.get(2));
+                    req.setAttribute("currency(3)", cards_currencies2.get(3));
+                    System.out.println(list_of_cards_id2);
                 }
             }else{
                 System.out.println("Password is not correct!");

@@ -1,8 +1,12 @@
 package com.service.controller;
 
 import com.service.model.Basket;
+import com.service.model.Customer_basket;
 import com.service.service.BasketService;
 import com.service.service.BasketServiceImpl;
+import com.service.service.Customer_basketService;
+import com.service.service.Customer_basketServiceImpl;
+import com.service.util.DBManager;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -11,6 +15,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Date;
 
 /**
  * Created by Nadia on 10.05.2017.
@@ -19,7 +28,11 @@ import java.io.IOException;
 public class MobileRefillServlet extends HttpServlet {
 
     private BasketService basketService;
-    public MobileRefillServlet() {this.basketService = new BasketServiceImpl();}
+    private Customer_basketService customer_basketService;
+    public MobileRefillServlet() {
+        this.basketService = new BasketServiceImpl();
+        this.customer_basketService = new Customer_basketServiceImpl();
+    }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -75,10 +88,35 @@ public class MobileRefillServlet extends HttpServlet {
             cardsender1 = number3;
         }
 
-        Basket basket = new Basket(cardsender1,phonenumber,amount,currency,status);
-        this.basketService.create(basket);
+        Date data = new Date();
+        String data2 = data.toString();
+        session.setAttribute("data2",data2);
+        System.out.println(data2);
 
+
+        try {
+            DBManager dbManager = DBManager.getInstance();
+            Connection connection = dbManager.getConnection();
+
+            Basket basket = new Basket(cardsender1,phonenumber,amount,currency,data2,status);
+            this.basketService.create(basket);
+
+
+            CallableStatement lastBasketLine = connection.prepareCall("{call LastBasketId(?)}");
+            lastBasketLine.registerOutParameter(1, Types.INTEGER);
+            lastBasketLine.executeQuery();
+            int maxbasketid = (int) lastBasketLine.getObject(1);
+            lastBasketLine.close();
+
+            int castid = (int)session.getAttribute("castid");
+            Customer_basket customer_basket = new Customer_basket(castid,maxbasketid);
+            this.customer_basketService.create(customer_basket);
+
+        }catch (SQLException e) {
+            e.printStackTrace();
+        }
         req.setAttribute("mobilerefill",1);
+        req.setAttribute("authorize",1);
         session.setAttribute("mobilerefill",1);
         req.setAttribute("cardsender",cardsender1);
         req.setAttribute("cardrecipient", phonenumber);

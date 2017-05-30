@@ -18,6 +18,7 @@ public class CustomerDaoImpl extends AbstractDaoImpl<Customer> implements Custom
             ps.setString(2, entity.getCustomer_second_name());
             ps.setString(3, entity.getCustomer_login());
             ps.setString(4, entity.getCustomer_password());
+            ps.setString(5, entity.getCustomer_status());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -30,7 +31,8 @@ public class CustomerDaoImpl extends AbstractDaoImpl<Customer> implements Custom
             ps.setString(2, entity.getCustomer_second_name());
             ps.setString(3, entity.getCustomer_login());
             ps.setString(4, entity.getCustomer_password());
-            ps.setLong(5, entity.getCustomer_id());
+            ps.setString(5, entity.getCustomer_status());
+            ps.setLong(6, entity.getCustomer_id());
         } catch (SQLException e) {
             e.printStackTrace();
         }

@@ -19,6 +19,9 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 
 @WebServlet(name="RemittanceServlet", urlPatterns = "/RemittanceServlet")
 public class RemittanceServlet extends HttpServlet {
@@ -67,7 +70,7 @@ public class RemittanceServlet extends HttpServlet {
         session.setAttribute("currency(3)",currency3);
 
         String card1 = req.getParameter("cards");
-        System.out.println("Result is > " + card1);
+        //System.out.println("Result is > " + card1);
         String cardsender = null;
         if(card1.equals("0")){
             cardsender = number0;
@@ -85,10 +88,6 @@ public class RemittanceServlet extends HttpServlet {
         double amount = Double.parseDouble(req.getParameter("amount"));
         String currency = req.getParameter("currency");
 
-        System.out.println(cardsender);
-        System.out.println(cardrecipient);
-        System.out.println(amount);
-        System.out.println(currency);
 
         try {
             DBManager dbManager = DBManager.getInstance();
@@ -99,8 +98,6 @@ public class RemittanceServlet extends HttpServlet {
             existCard.executeQuery();
             int existcard = (int) existCard.getObject(2);
             existCard.close();
-
-            System.out.println(existcard);
 
             if(existcard != 0){
                 req.setAttribute("Basket",1);
@@ -115,8 +112,13 @@ public class RemittanceServlet extends HttpServlet {
                 session.setAttribute("currency", currency);
                 String status = "not active";
 
+                Date data = new Date();
+                String data1 = data.toString();
+                session.setAttribute("data1",data1);
+                System.out.println(data1);
+
                 int castid = (int)session.getAttribute("castid");
-                Basket basket = new Basket(cardsender,cardrecipient,amount,currency,status);
+                Basket basket = new Basket(cardsender,cardrecipient,amount,currency,data1,status);
                 this.basketService.create(basket);
 
                 CallableStatement lastBasketLine = connection.prepareCall("{call LastBasketId(?)}");
@@ -127,6 +129,10 @@ public class RemittanceServlet extends HttpServlet {
 
                 Customer_basket customer_basket = new Customer_basket(castid,maxbasketid);
                 this.customer_basketService.create(customer_basket);
+
+                //////////////////
+
+
 
 
             }else{

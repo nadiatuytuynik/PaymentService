@@ -7,6 +7,7 @@ drop table Basket;
 drop table Mobile_refill;
 drop table Phone;
 drop table Customer_basket;
+drop table Keys;
 
 drop SEQUENCE card_seq;
 drop SEQUENCE customer_seq;
@@ -17,12 +18,23 @@ drop SEQUENCE basket_seq;
 drop SEQUENCE mobile_refill_seq;
 drop SEQUENCE phone_seq;
 drop SEQUENCE customer_basket_seq;
+drop SEQUENCE keys_seq;
 
 drop TRIGGER card_trigger;
 drop TRIGGER customer_trigger;
 drop TRIGGER card_customer_trigger;
 drop TRIGGER phone_trigger;
 drop TRIGGER customer_basket_trigger;
+drop TRIGGER keys_trigger;
+
+
+create table Keys (
+  keys_id NUMBER(3),
+  public_key NUMBER(10),
+  private_key NUMBER(10),
+  public_key_n NUMBER(10),
+  public_key_fn NUMBER(10)
+);
 
 create table Card (
 	card_id NUMBER(3),
@@ -40,7 +52,8 @@ create table  Customer (
 	customer_name VARCHAR(20) NOT NULL,
 	customer_second_name VARCHAR(20) NOT NULL,
 	customer_login VARCHAR(20) NOT NULL,
-	customer_password  VARCHAR(20) NOT NULL,
+	customer_password  VARCHAR(100) NOT NULL,
+  customer_status VARCHAR(10) NOT NULL,
 	CONSTRAINT customer_pk PRIMARY KEY(customer_id)
 );
 
@@ -78,6 +91,7 @@ create table Basket (
 	recipient_number VARCHAR(16),
 	amount__of_remittance DECIMAL(31,6),
 	currency_of_amount VARCHAR(10) NOT NULL,
+  data_of_operation VARCHAR(30) NOT NULL,
 	status_of_line VARCHAR(15),
 	CONSTRAINT basket_pk PRIMARY KEY(basket_line_id)
 );
@@ -128,6 +142,7 @@ CREATE SEQUENCE basket_seq start with 1 INCREMENT BY 1 NOMAXVALUE ;
 CREATE SEQUENCE mobile_refill_seq start with 1 INCREMENT BY 1 NOMAXVALUE ;
 CREATE SEQUENCE phone_seq start with 1 INCREMENT BY 1 NOMAXVALUE;
 CREATE SEQUENCE customer_basket_seq start with 1 INCREMENT BY 1 NOMAXVALUE;
+CREATE SEQUENCE keys_seq start with 1 INCREMENT BY 1 NOMAXVALUE;
 
 CREATE or REPLACE TRIGGER card_trigger
 BEFORE INSERT ON Card
@@ -183,7 +198,16 @@ for EACH ROW
     from dual;
   END;
 
-CREATE OR REPLACE PROCEDURE ExistUser(log IN VARCHAR2, pass IN VARCHAR2,
+CREATE or REPLACE TRIGGER keys_trigger
+BEFORE INSERT ON Keys
+for EACH ROW
+  BEGIN
+    select keys_seq.nextval
+    INTO :new.keys_id
+    from dual;
+  END;
+
+CREATE OR REPLACE PROCEDURE ExistUser(log IN VARCHAR2, pass OUT VARCHAR2,
                                   exis OUT NUMBER )
 AS
   k NUMBER;
@@ -192,8 +216,28 @@ AS
 
     SELECT count(customer_login) into k
     FROM Customer
-    WHERE customer_login = log
-    AND customer_password = pass;
+    WHERE customer_login = log;
+
+    IF (k=0)  THEN
+      exis := 0;
+    ELSE IF(k=1) THEN
+      SELECT customer_password into pass
+      FROM Customer
+      WHERE customer_login = log;
+      exis := 1;
+      END IF;
+    END IF;
+
+  END ExistUser;
+
+CREATE OR REPLACE PROCEDURE ExistSameLogin(log IN VARCHAR2,exis OUT NUMBER )AS
+  k NUMBER;
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT count(customer_login) into k
+    FROM Customer
+    WHERE customer_login = log;
 
     IF (k=0)  THEN
       exis := 0;
@@ -201,7 +245,7 @@ AS
       exis := 1;
     END IF;
 
-  END ExistUser;
+  END ExistSameLogin;
 
 
 CREATE OR REPLACE PROCEDURE AmountOfCards
@@ -239,16 +283,25 @@ CREATE OR REPLACE PROCEDURE UserName(log IN VARCHAR2,  pass IN VARCHAR2, castnam
 
 
 CREATE OR REPLACE PROCEDURE ShowCards(ccid IN NUMBER, cusid IN VARCHAR2,  cardsid OUT NUMBER)AS
-	BEGIN
+	k NUMBER;
+  BEGIN
 		SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
-		SELECT card_id into cardsid
-		FROM Card_customer
-		WHERE customer_id = cusid
-		AND card_customer_id = ccid;
+    SELECT count(card_id) into k
+    FROM Card_customer
+    WHERE customer_id = cusid
+          AND card_customer_id = ccid;
 
-    if(cardsid IS NULL) THEN
+    if(k = 0) THEN
       cardsid := 0;
+      else if(k!=0)THEN
+
+        SELECT card_id into cardsid
+        FROM Card_customer
+        WHERE customer_id = cusid
+        AND card_customer_id = ccid;
+        end if;
+
     end if;
 
 	END ShowCards;
@@ -257,8 +310,19 @@ CREATE OR REPLACE PROCEDURE ShowCards(ccid IN NUMBER, cusid IN VARCHAR2,  cardsi
 CREATE OR REPLACE PROCEDURE CardInfo
   (cardid IN VARCHAR2,cardnumber OUT VARCHAR2,cardaccount OUT DECIMAL, cardcurrency OUT VARCHAR2)
 AS
+  k NUMBER;
   BEGIN
     SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT count(card_number) into k
+    FROM Card
+    WHERE card_id = cardid;
+
+    IF (k = 0) THEN
+      cardnumber:='none';
+      cardaccount:=0.0;
+      cardcurrency:='none';
+    ELSE IF (k !=0) then
 
     SELECT card_number into cardnumber
     FROM Card
@@ -271,8 +335,11 @@ AS
     SELECT currency_of_account into cardcurrency
     FROM Card
     WHERE card_id = cardid;
+      end if;
+      end if;
 
   END CardInfo;
+
 
 CREATE OR REPLACE PROCEDURE CardInfoNumber
   (cardnumber IN VARCHAR2,cardaccount OUT DECIMAL, cardcurrency OUT VARCHAR2)
@@ -339,7 +406,7 @@ CREATE OR REPLACE PROCEDURE UpdateCard(cardnum IN VARCHAR2, amount IN DECIMAL)AS
 
   END UpdateCard;
 
-CREATE OR REPLACE PROCEDURE UpdateBasket(newstatus IN VARCHAR2)AS
+CREATE OR REPLACE PROCEDURE UpdateBasket(newstatus IN VARCHAR2, opdata IN VARCHAR2)AS
   maxid NUMBER;
   BEGIN
     SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
@@ -349,6 +416,10 @@ CREATE OR REPLACE PROCEDURE UpdateBasket(newstatus IN VARCHAR2)AS
 
     UPDATE Basket
     SET status_of_line = newstatus
+    WHERE basket_line_id = maxid;
+
+    UPDATE Basket
+    SET data_of_operation = opdata
     WHERE basket_line_id = maxid;
 
   END UpdateBasket;
@@ -388,49 +459,74 @@ CREATE OR REPLACE PROCEDURE LastBasketId(maxbasketid OUT NUMBER)AS
 
 CREATE OR REPLACE PROCEDURE BasketLines
   (lineid IN NUMBER, cardsender OUT VARCHAR2, cardrecipient OUT VARCHAR2,
-   amountremittance OUT DECIMAL, currencyofamount OUT VARCHAR2)
+   amountremittance OUT DECIMAL, currencyofamount OUT VARCHAR2, dataofoperation OUT VARCHAR2)
 AS
+  k NUMBER;
   BEGIN
     SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
+    SELECT count(sender_card_number) INTO k
+    FROM Basket
+    WHERE status_of_line = 'committed'
+          AND basket_line_id = lineid;
+
+    IF(k !=0) THEN
+
     SELECT sender_card_number INTO cardsender
     FROM Basket
-    WHERE status_of_line = 'not active'
+    WHERE status_of_line = 'committed'
           AND basket_line_id = lineid;
 
     SELECT recipient_number INTO cardrecipient
     FROM Basket
-    WHERE status_of_line = 'not active'
+    WHERE status_of_line = 'committed'
           AND basket_line_id = lineid;
 
     SELECT amount__of_remittance INTO amountremittance
     FROM Basket
-    WHERE status_of_line = 'not active'
+    WHERE status_of_line = 'committed'
           AND basket_line_id = lineid;
 
     SELECT currency_of_amount INTO currencyofamount
     FROM Basket
-    WHERE status_of_line = 'not active'
+    WHERE status_of_line = 'committed'
           AND basket_line_id = lineid;
+
+    SELECT data_of_operation INTO dataofoperation
+    FROM Basket
+    WHERE status_of_line = 'committed'
+          AND basket_line_id = lineid;
+
+    ELSE IF (k = 0) THEN
+      cardsender :=0;
+      cardrecipient:=0;
+      amountremittance :=0;
+      currencyofamount :=0;
+    END IF;
+    END IF;
 
   END BasketLines;
 
-CREATE OR REPLACE PROCEDURE GetBasketId(castid IN NUMBER, basketid OUT NUMBER)AS
+CREATE OR REPLACE PROCEDURE GetBasketId(castid IN NUMBER, castbasketid IN NUMBER, basketid OUT NUMBER)AS
   k NUMBER;
   BEGIN
     SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
     SELECT count(basket_line_id) INTO k
     FROM Customer_basket
-    WHERE customer_id = castid;
+    WHERE customer_id = castid
+    AND customer_basket_line_id = castbasketid;
 
-    IF (k IS NOT NULL) THEN
+    IF (k = 0) THEN
+      basketid:=0;
+    ELSE IF (k !=0) THEN
+
       SELECT basket_line_id INTO basketid
       FROM Customer_basket
-      WHERE customer_id = castid;
-    ELSE
-      basketid:=0;
+      WHERE customer_id = castid
+            AND customer_basket_line_id = castbasketid;
     END IF;
+      END IF;
 
   END GetBasketId;
 
@@ -439,24 +535,234 @@ CREATE OR REPLACE PROCEDURE MaxMinCustomerBasketId(castid IN NUMBER, maxcastbask
   BEGIN
     SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
-    SELECT count(basket_line_id) INTO k
+    SELECT count(customer_basket_line_id) INTO k
     FROM Customer_basket
     WHERE customer_id = castid;
 
-    IF (k IS NOT NULL) THEN
-      SELECT max(basket_line_id) INTO maxcastbaskid
+    IF (k = 0) THEN
+      maxcastbaskid:=0;
+      mincastbaskid:=0;
+    ELSE
+      SELECT max(customer_basket_line_id) INTO maxcastbaskid
       FROM Customer_basket
       WHERE customer_id = castid;
 
-      SELECT min(basket_line_id) INTO mincastbaskid
+      SELECT min(customer_basket_line_id) INTO mincastbaskid
       FROM Customer_basket
       WHERE customer_id = castid;
-    ELSE
-      maxcastbaskid:=0;
-      mincastbaskid:=0;
     END IF;
 
   END MaxMinCustomerBasketId;
+
+
+CREATE OR REPLACE PROCEDURE GetKeys(publickey OUT NUMBER,privatekey OUT NUMBER,  publickeyn OUT NUMBER, publickeyfn OUT NUMBER)AS
+  k NUMBER;
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT max(keys_id) into k
+    FROM Keys;
+
+    SELECT public_key into publickey
+    FROM Keys
+    WHERE keys_id = k;
+
+    SELECT private_key into privatekey
+    FROM Keys
+    WHERE keys_id = k;
+
+    SELECT public_key_n into publickeyn
+    FROM Keys
+    WHERE keys_id = k;
+
+    SELECT public_key_fn into publickeyfn
+    FROM Keys
+    WHERE keys_id = k;
+
+  END GetKeys;
+
+
+CREATE OR REPLACE PROCEDURE GetAllCustomers(custid IN NUMBER, custname OUT VARCHAR2, custsecondname OUT VARCHAR2,
+  custlogin OUT VARCHAR2, custpass OUT VARCHAR2, custstatus OUT VARCHAR2)AS
+  k NUMBER;
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT count(customer_name) into k
+    FROM Customer
+    WHERE customer_id = custid;
+
+    IF(k=0) THEN
+      custname:='none';
+      custsecondname:='none';
+      custlogin:='none';
+      custpass:='none';
+
+      ELSE IF (k!=0) THEN
+
+        SELECT customer_name into custname
+        FROM Customer
+        WHERE customer_id = custid;
+
+        SELECT customer_second_name into custsecondname
+        FROM Customer
+        WHERE customer_id = custid;
+
+        SELECT customer_login into custlogin
+        FROM Customer
+        WHERE customer_id = custid;
+
+        SELECT customer_password into custpass
+        FROM Customer
+        WHERE customer_id = custid;
+
+        SELECT customer_status into custstatus
+        FROM Customer
+        WHERE customer_id = custid;
+
+      END IF;
+    END IF;
+
+  END GetAllCustomers;
+
+
+CREATE OR REPLACE PROCEDURE AmountOfCustomers(maxcustid OUT NUMBER, mincustid OUT NUMBER)AS
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT max(customer_id) into maxcustid
+    FROM Customer;
+
+    SELECT min(customer_id) into mincustid
+    FROM Customer;
+
+    IF (maxcustid IS NULL) THEN
+      maxcustid:=0;
+    END IF;
+
+    IF (mincustid IS NULL) THEN
+      mincustid:=0;
+    END IF;
+
+  END AmountOfCustomers;
+
+
+CREATE OR REPLACE PROCEDURE CustomerBlock(custlogin IN VARCHAR2)AS
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    UPDATE Customer
+    SET customer_status = 'block'
+    WHERE customer_login = custlogin;
+
+  END CustomerBlock;
+
+
+CREATE OR REPLACE PROCEDURE CustomerUnBlock(custlogin IN VARCHAR2)AS
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    UPDATE Customer
+    SET customer_status = 'unblock'
+    WHERE customer_login = custlogin;
+
+  END CustomerUnBlock;
+
+
+CREATE OR REPLACE PROCEDURE GetCustomerStatus(custlogin IN VARCHAR2, custstatus OUT VARCHAR2)AS
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+   SELECT customer_status INTO custstatus
+     FROM Customer
+       WHERE customer_login = custlogin;
+
+  END GetCustomerStatus;
+
+CREATE OR REPLACE PROCEDURE UpdateCustPassWithNewKey(custid IN VARCHAR2, custpass IN VARCHAR2)AS
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    UPDATE Customer
+    SET customer_password = custpass
+    WHERE customer_id = custid;
+
+  END UpdateCustPassWithNewKey;
+
+
+CREATE OR REPLACE PROCEDURE UpdateKeys AS
+  k NUMBER;
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT max(keys_id) into k
+    FROM Keys;
+
+    DELETE FROM Keys
+    WHERE keys_id = k;
+
+  END UpdateKeys;
+
+
+CREATE OR REPLACE PROCEDURE AmountOfKeys(amountofkeys OUT NUMBER) AS
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT count(keys_id) INTO amountofkeys
+      FROM Keys;
+
+  END AmountOfKeys;
+
+
+CREATE OR REPLACE PROCEDURE ClearHistory(custid IN NUMBER) AS
+  k NUMBER;
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT count(customer_id) INTO k
+    FROM Customer_Basket
+    WHERE customer_id = custid;
+
+    IF( k!=0) THEN
+      DELETE FROM Customer_Basket
+      WHERE customer_id = custid;
+    END IF;
+
+  END ClearHistory;
+
+
+CREATE OR REPLACE PROCEDURE CustomerName(custid IN NUMBER, customername OUT VARCHAR2, customersecondname OUT VARCHAR2) AS
+  k NUMBER;
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT count(customer_id) INTO k
+    FROM Customer
+    WHERE customer_id = custid;
+
+    IF( k!=0) THEN
+
+      SELECT customer_name INTO customername
+      FROM Customer
+      WHERE customer_id = custid;
+
+      SELECT customer_second_name INTO customersecondname
+      FROM Customer
+      WHERE customer_id = custid;
+
+    END IF;
+
+  END CustomerName;
+
+
+CREATE OR REPLACE PROCEDURE LastCustomerId(maxcastid OUT NUMBER) AS
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT max(customer_id) INTO maxcastid
+    FROM Customer;
+
+  END LastCustomerId;
 
 
 drop procedure ExistUser;
@@ -476,4 +782,16 @@ drop procedure LastBasketId;
 drop procedure BasketLines;
 drop PROCEDURE GetBasketId;
 drop procedure MaxMinCustomerBasketId;
-
+drop procedure ExistSameLogin;
+drop procedure GetKeys;
+drop procedure GetAllCustomers;
+drop procedure AmountOfCustomers;
+drop procedure CustomerBlock;
+drop procedure GetCustomerStatus;
+drop procedure CustomerUnBlock;
+drop procedure UpdateCustPassWithNewKey;
+drop procedure UpdateKeys;
+drop procedure AmountOfKeys;
+drop procedure ClearHistory;
+drop procedure CustomerName;
+drop procedure LastCustomerId;

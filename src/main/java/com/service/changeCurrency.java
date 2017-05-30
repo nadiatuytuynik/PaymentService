@@ -42,7 +42,7 @@ public class changeCurrency {
             double euro = UAN_EUR(400, currencies_double.get(2));
             System.out.println("UAN > 400;  EUR > " + euro);
 
-            double uan2 = EUR_UAN(400, currencies_double.get(2));
+            double uan2 = EUR_UAN(400, currencies_double.get(2));//
             System.out.println("EUR > 400;  UAN > " + uan2);
 
             double eur2 = USD_EUR(400, currencies_double.get(0),currencies_double.get(2));

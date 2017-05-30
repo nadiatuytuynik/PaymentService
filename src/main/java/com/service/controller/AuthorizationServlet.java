@@ -218,9 +218,6 @@ public class AuthorizationServlet extends HttpServlet {
                             int maxcustbaskid = (int) maxmincustomerbasketid.getObject(2);
                             int mincustbaskid = (int) maxmincustomerbasketid.getObject(3);
 
-                            //System.out.println("maxcustbaskid = " + maxcustbaskid);
-                            //System.out.println("mincustbaskid = " + mincustbaskid);
-
                             if (maxcustbaskid == 0) {
                                 System.out.println("Error!");
                             } else {
@@ -250,7 +247,6 @@ public class AuthorizationServlet extends HttpServlet {
                                 ArrayList<String> CurrenciesBasketList = new ArrayList<String>();
                                 ArrayList<String> DataBasketList = new ArrayList<String>();
 
-
                                 for (int j = 0; j < 10; j++) {
                                     CardsSenderBasketList.add(null);
                                     RecipientsBasketList.add(null);
@@ -258,9 +254,6 @@ public class AuthorizationServlet extends HttpServlet {
                                     CurrenciesBasketList.add(null);
                                     DataBasketList.add(null);
                                 }
-
-
-                                //System.out.println("castbaskid_list > " + castbaskid_list);
 
                                 for (int j = 0; j < castbaskid_list.size(); j++) {
                                     int lineid = castbaskid_list.get(j);
@@ -369,6 +362,5 @@ public class AuthorizationServlet extends HttpServlet {
             req.getRequestDispatcher("index.jsp").forward(req, resp);
         }
     }
-
 
 }

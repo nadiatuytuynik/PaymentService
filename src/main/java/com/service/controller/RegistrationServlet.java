@@ -90,6 +90,7 @@ public class RegistrationServlet extends HttpServlet {
                 Phone phone = new Phone(lastcustid, "Kyivstar", phone_number, 0.0, "dollar");
                 this.phoneService.create(phone);
 
+
                 request.setAttribute("param1", "Successfully");
                 System.out.println("Successfully");
             }else{

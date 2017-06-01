@@ -1,6 +1,7 @@
 package com.service.controller;
 
 
+import com.service.generateMobilePassword;
 import com.service.model.Card;
 import com.service.model.Card_customer;
 import com.service.service.CardService;
@@ -40,8 +41,9 @@ public class CheckingPasswordServlet extends HttpServlet {
             DBManager dbManager = DBManager.getInstance();
             Connection connection = dbManager.getConnection();
 
-            String pass = "1234";
-            String smspassword = (String)req.getParameter("sms_password");
+            int pass = (int)session.getAttribute("pass");
+
+            int smspassword = Integer.parseInt(req.getParameter("sms_password"));
             System.out.println(smspassword);
 
             int value = (int)session.getAttribute("value");
@@ -62,7 +64,7 @@ public class CheckingPasswordServlet extends HttpServlet {
             session.setAttribute("name", name);
             session.setAttribute("secondname", secondname);
 
-            if(smspassword.equals(pass)){
+            if(smspassword == pass){
                 System.out.println("Correct! Ready to add card");
                 req.setAttribute("smsresult", 1);
                 req.setAttribute("authorize", 1);

@@ -3,7 +3,6 @@ package com.service.controller;
 import com.service.methodRSA;
 import com.service.util.DBManager;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -17,11 +16,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Created by Nadia on 22.04.2017.
- */
 
 @WebServlet(name="AuthorizationServlet", urlPatterns = "/AuthorizationServlet")
 public class AuthorizationServlet extends HttpServlet {
@@ -229,7 +224,7 @@ public class AuthorizationServlet extends HttpServlet {
                                     getBasketId.registerOutParameter(3, Types.INTEGER);
                                     getBasketId.executeQuery();
                                     int basketid = (int) getBasketId.getObject(3);
-                                    System.out.println("basketid = " + basketid);
+                                    //System.out.println("basketid = " + basketid);
                                     if ((basketid == 0) && (j == maxcustbaskid)) {
                                         break;
                                     } else {
@@ -241,6 +236,7 @@ public class AuthorizationServlet extends HttpServlet {
                                     }
                                 }
 
+                                System.out.println(castbaskid_list);
                                 ArrayList<String> CardsSenderBasketList = new ArrayList<String>();
                                 ArrayList<String> RecipientsBasketList = new ArrayList<String>();
                                 ArrayList<Double> AmountsBasketList = new ArrayList<Double>();
@@ -285,6 +281,12 @@ public class AuthorizationServlet extends HttpServlet {
                                         DataBasketList.set(j, dataofoperation);
                                     }
                                 }
+
+                                System.out.println("CardsSenderBasketList = " + CardsSenderBasketList);
+                                System.out.println("RecipientsBasketList = " + RecipientsBasketList);
+                                System.out.println("AmountsBasketList = " + AmountsBasketList);
+                                System.out.println("CurrenciesBasketList = " + CurrenciesBasketList);
+                                System.out.println("DataBasketList = " + DataBasketList);
 
                                 req.setAttribute("bsender(0)", CardsSenderBasketList.get(0));
                                 req.setAttribute("bsender(1)", CardsSenderBasketList.get(1));

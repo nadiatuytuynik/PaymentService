@@ -394,7 +394,7 @@
 							  <div class = "panel-body">
 								  <div class = "input-group">
 									  <span class="input-group-addon"><span class="glyphicon glyphicon-phone"></span></span>
-									  <input id = "text_11" type="password" class="form-control text"  placeholder="sms-password" name = "sms_password"  title = "" required="" value="" maxlength = "30"/>
+									  <input id = "number" type="password" class="form-control text"  placeholder="sms-password" name = "sms_password"  title = "" required="" value="" maxlength = "30"/>
 									  <span class="glyphicon form-control-feedback"></span>
 								  </div>
 							  </div>
@@ -831,8 +831,8 @@
 
 	  <%}
 	  }
-	  Object update = request.getAttribute("update");
-	  if(update !=null){%>
+	  Object updateProfile = request.getAttribute("updateProfile");
+	  if(updateProfile !=null){%>
 	  <script>
             alert('Operation successfully confirmed.');
 			onoff('Profile');

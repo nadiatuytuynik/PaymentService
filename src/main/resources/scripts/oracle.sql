@@ -8,6 +8,8 @@ drop table Mobile_refill;
 drop table Phone;
 drop table Customer_basket;
 drop table Keys;
+drop table Message;
+drop table Phone_message;
 
 drop SEQUENCE card_seq;
 drop SEQUENCE customer_seq;
@@ -130,6 +132,23 @@ create table Phone (
   CONSTRAINT phone_pk PRIMARY KEY(phone_id),
   CONSTRAINT customer_id_fk FOREIGN KEY (customer_id)
   REFERENCES Customer
+);
+
+create table Message (
+  message_id NUMBER(3),
+  message_content VARCHAR(4),
+  CONSTRAINT message_pk PRIMARY KEY(message_id)
+);
+
+create table Phone_message(
+  phone_message_id NUMBER(3),
+  phone_id NUMBER(3),
+  message_id NUMBER(3),
+  CONSTRAINT phone_message_pk PRIMARY KEY(phone_message_id),
+  CONSTRAINT phone_id_fk FOREIGN KEY (phone_id)
+  REFERENCES Phone,
+  CONSTRAINT message_id_fk FOREIGN KEY (message_id)
+  REFERENCES Message
 );
 
 
@@ -765,6 +784,27 @@ CREATE OR REPLACE PROCEDURE LastCustomerId(maxcastid OUT NUMBER) AS
   END LastCustomerId;
 
 
+CREATE OR REPLACE PROCEDURE CustomerPhone(castid IN NUMBER, phoneid OUT NUMBER) AS
+  k NUMBER;
+  BEGIN
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+    SELECT count(phone_id) INTO k
+    FROM Phone
+    WHERE customer_id = castid;
+
+    IF(k=0) THEN
+      phoneid:=0;
+      ELSE IF(k!=0) THEN
+        SELECT phone_id INTO phoneid
+        FROM Phone
+        WHERE customer_id = castid;
+        END IF;
+      END IF;
+
+  END CustomerPhone;
+
+
 drop procedure ExistUser;
 drop procedure AmountOfCards;
 drop procedure UserName;
@@ -795,3 +835,4 @@ drop procedure AmountOfKeys;
 drop procedure ClearHistory;
 drop procedure CustomerName;
 drop procedure LastCustomerId;
+drop procedure CustomerPhone;

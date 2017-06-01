@@ -1,5 +1,10 @@
 package com.service.controller;
 
+import com.service.generateMobilePassword;
+import com.service.model.Customer;
+import com.service.model.Message;
+import com.service.model.Phone_message;
+import com.service.service.*;
 import com.service.util.DBManager;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -8,12 +13,22 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Types;
 
 
 @WebServlet(name="AddCardServlet", urlPatterns = "/AddCardServlet")
 public class AddCardServlet extends HttpServlet {
+
+    private MessageService messageService;
+    private Phone_messageService phone_messageService;
+    public AddCardServlet() {
+        this.messageService = new MessageServiceImpl();
+        this.phone_messageService = new Phone_messageServiceImpl();
+    }
+
 
     @Override
     protected  void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -102,6 +117,39 @@ public class AddCardServlet extends HttpServlet {
                 e.printStackTrace();
             }
         }
+
+        int pass = generateMobilePassword.pass();
+        String pass2 = Integer.toString(pass);
+        Message message = new Message(pass2);
+        this.messageService.create(message);
+
+
+        try {
+            DBManager dbManager = DBManager.getInstance();
+            Connection connection = dbManager.getConnection();
+            CallableStatement lastCustomerId = connection.prepareCall("{call LastCustomerId(?)}");
+            lastCustomerId.registerOutParameter(1, Types.INTEGER);
+            lastCustomerId.executeQuery();
+            int lastcustid = (int) lastCustomerId.getObject(1);
+            lastCustomerId.close();
+
+            CallableStatement customerPhone = connection.prepareCall("{call CustomerPhone(?)}");
+            customerPhone.setInt(1, lastcustid);
+            customerPhone.registerOutParameter(2, Types.INTEGER);
+            customerPhone.executeQuery();
+            int phoneid = (int) lastCustomerId.getObject(1);
+            customerPhone.close();
+
+            Phone_message phone_message = new Phone_message(lastcustid, phoneid);
+            this.phone_messageService.create(phone_message);
+
+
+        }catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
+        session.setAttribute("pass", pass);
 
         req.setAttribute("authorize", 1);
         req.getRequestDispatcher("index.jsp").forward(req,resp);

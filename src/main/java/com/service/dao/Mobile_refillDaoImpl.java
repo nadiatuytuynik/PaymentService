@@ -15,11 +15,10 @@ public class Mobile_refillDaoImpl extends AbstractDaoImpl<Mobile_refill> impleme
     @Override
     protected void fillCreateStatement(PreparedStatement ps, Mobile_refill entity) {
         try {
-            ps.setLong(1, entity.getMobile_refill_id());
-            ps.setLong(2, entity.getSender_card_number());
-            ps.setLong(3, entity.getRecipient_phone_number());
-            ps.setInt(4, entity.getAmount__of_remittance());
-            ps.setString(5, entity.getCurrency_of_amount());
+            ps.setLong(1, entity.getSender_card_number());
+            ps.setLong(2, entity.getRecipient_phone_number());
+            ps.setInt(3, entity.getAmount__of_remittance());
+            ps.setString(4, entity.getCurrency_of_amount());
         } catch (SQLException e) {
             e.printStackTrace();
         }
